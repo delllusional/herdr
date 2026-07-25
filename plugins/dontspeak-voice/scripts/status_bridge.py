@@ -39,13 +39,13 @@ def report(pane_id, value=None):
 def open_dictation_popup():
     # A popup uses the currently focused Herdr pane as its target. --no-focus
     # preserves that target so DontSpeak's native paste/Enter route is unchanged.
-    command(
+    return command(
         "herdr", "plugin", "pane", "open",
         "--plugin", POPUP_PLUGIN,
         "--entrypoint", POPUP_ENTRYPOINT,
         "--placement", "popup",
         "--no-focus",
-    )
+    ).returncode == 0
 
 
 def main():
@@ -73,8 +73,9 @@ def main():
         dictation = status.get("dictation", {})
         now_visible = dictation.get("state") != "hidden"
         if now_visible and not dictation_visible:
-            open_dictation_popup()
-        dictation_visible = now_visible
+            dictation_visible = open_dictation_popup()
+        elif not now_visible:
+            dictation_visible = False
         current = set()
         for row in status.get("voice_sessions", []):
             pane_id = row.get("pane_id")

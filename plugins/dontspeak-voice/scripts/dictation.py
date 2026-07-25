@@ -4,6 +4,7 @@
 import json
 import subprocess
 import sys
+import time
 
 
 def status(since=None):
@@ -32,14 +33,16 @@ def main():
     while True:
         snapshot = status(seq)
         if not snapshot:
+            time.sleep(0.25)
             continue
         seq = snapshot.get("seq", seq)
         dictation = snapshot.get("dictation", {})
         state = dictation.get("state", "hidden")
         if state == "hidden":
-            if was_visible:
-                return
-            continue
+            # This process is launched only for an active dictation popup. If
+            # the turn ended before launch, exit instead of indefinitely
+            # renewing the external-UI lease and hiding the native fallback.
+            return
         was_visible = True
         draw(dictation.get("text", ""))
 
