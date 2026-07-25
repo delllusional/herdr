@@ -15,10 +15,26 @@ show the per-pane voice status, for example:
 rows = [["state_icon", "workspace"], ["agent", "$dontspeak_voice"]]
 ```
 
-When Caps Lock starts local dictation, the startup bridge opens a small, read-only
+When Caps Lock starts local dictation, the startup bridge opens a small, display-only
 popup over the active Herdr pane. It mirrors only the native Don't Speak
 transcript and closes when dictation ends. Keyboard and paste events continue to
 the underlying agent pane, so Don't Speak keeps its normal gesture semantics:
 single tap inserts and submits; double tap inserts without Enter; long press
-cancels. If the popup or plugin disappears, the short UI lease expires and the
-native Don't Speak overlay resumes automatically.
+cancels.
+
+The popup acquires a lease scoped to the current dictation session, renders its
+first snapshot, and only then marks itself ready. It renews while visible and
+releases on close. The startup bridge never owns that lease. If the popup fails
+to start, exits, or stops renewing, the native Don't Speak overlay remains or
+returns automatically without giving the plugin microphone, paste, or
+Accessibility capabilities.
+
+External presentation is fail-closed on Herdr's foreground-client focus signal:
+the popup does not take over when the terminal is backgrounded, and focus loss
+releases the lease during dictation. Terminals or nested multiplexers that do
+not report focus changes keep the native Don't Speak overlay instead.
+
+The terminal presenter requires a Herdr build whose session snapshot exposes
+`outer_terminal_focus` (this feature branch includes it). On an older or stock
+build without that optional field, voice metadata still works and dictation
+degrades safely to the native Don't Speak overlay.
