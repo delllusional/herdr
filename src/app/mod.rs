@@ -1626,8 +1626,7 @@ impl App {
                     let pressed_key_id = pressed_key_identity(source_id, &key);
                     match key.kind {
                         crossterm::event::KeyEventKind::Press => {
-                            if self.state.popup_pane.is_some() || self.state.mode == Mode::Terminal
-                            {
+                            if self.popup_captures_input() || self.state.mode == Mode::Terminal {
                                 self.suppressed_repeat_keys.remove(&pressed_key_id);
                                 if let Some(target) =
                                     self.handle_terminal_key_headless_from(source_id, key)
@@ -1656,7 +1655,7 @@ impl App {
                                 {
                                     self.pressed_terminal_keys.remove(&pressed_key_id);
                                 }
-                            } else if (self.state.popup_pane.is_some()
+                            } else if (self.popup_captures_input()
                                 || self.state.mode == Mode::Terminal)
                                 && !self.suppressed_repeat_keys.contains(&pressed_key_id)
                             {
@@ -1675,7 +1674,8 @@ impl App {
                     }
                 }
                 crate::raw_input::RawInputEvent::Mouse(mouse) => {
-                    if self.state.popup_pane.is_some() || self.state.mouse_capture {
+                    if self.state.popup_pane.is_some() && !self.popup_captures_input() {
+                    } else if self.popup_captures_input() || self.state.mouse_capture {
                         self.handle_mouse_event_headless(source_id, mouse);
                     } else {
                         self.state
@@ -5714,6 +5714,83 @@ last_pane = "prefix+tab"
     }
 
     #[tokio::test]
+    async fn input_transparent_popup_passes_keyboard_and_paste_to_focused_pane() {
+        let mut app = test_app();
+        let mut workspace = Workspace::test_new("tiled");
+        let focused = workspace.focused_pane_id().unwrap();
+        let (tiled_runtime, mut tiled_rx) = TerminalRuntime::test_with_channel(80, 24);
+        workspace.tabs[0].runtimes.insert(focused, tiled_runtime);
+        app.state.workspaces = vec![workspace];
+        app.state.active = Some(0);
+        app.state.selected = 0;
+        app.state.mode = Mode::Terminal;
+
+        let (popup_runtime, mut popup_rx) = TerminalRuntime::test_with_channel(40, 12);
+        app.install_test_popup_runtime(popup_runtime);
+        app.state.popup_pane.as_mut().unwrap().input_passthrough = true;
+
+        app.route_client_events(
+            vec![
+                crate::raw_input::RawInputEvent::Paste("to-focused-pane".into()),
+                raw_key(KeyCode::Char('x'), KeyModifiers::NONE, KeyEventKind::Press),
+                raw_key(KeyCode::Char('x'), KeyModifiers::NONE, KeyEventKind::Repeat),
+            ],
+            true,
+        );
+
+        assert_eq!(
+            tiled_rx.try_recv().unwrap(),
+            bytes::Bytes::from_static(b"to-focused-pane")
+        );
+        assert_eq!(
+            tiled_rx.try_recv().unwrap(),
+            bytes::Bytes::from_static(b"x")
+        );
+        assert_eq!(
+            tiled_rx.try_recv().unwrap(),
+            bytes::Bytes::from_static(b"x")
+        );
+        assert!(popup_rx.try_recv().is_err());
+    }
+
+    #[tokio::test]
+    async fn input_transparent_popup_consumes_pointer_input() {
+        let mut app = test_app();
+        let mut workspace = Workspace::test_new("tiled");
+        let focused = workspace.focused_pane_id().unwrap();
+        let (tiled_runtime, mut tiled_rx) = TerminalRuntime::test_with_channel(80, 24);
+        tiled_runtime.test_process_pty_bytes(b"\x1b[?1000h\x1b[?1006h");
+        workspace.tabs[0].runtimes.insert(focused, tiled_runtime);
+        app.state.workspaces = vec![workspace];
+        app.state.active = Some(0);
+        app.state.selected = 0;
+        app.state.mode = Mode::Terminal;
+        app.state.mouse_capture = false;
+
+        let (popup_runtime, mut popup_rx) = TerminalRuntime::test_with_channel(40, 12);
+        app.install_test_popup_runtime(popup_runtime);
+        app.state.popup_pane.as_mut().unwrap().input_passthrough = true;
+
+        app.route_client_events(
+            vec![crate::raw_input::RawInputEvent::Mouse(
+                crossterm::event::MouseEvent {
+                    kind: crossterm::event::MouseEventKind::Down(
+                        crossterm::event::MouseButton::Left,
+                    ),
+                    column: 1,
+                    row: 1,
+                    modifiers: crossterm::event::KeyModifiers::NONE,
+                },
+            )],
+            true,
+        );
+
+        assert!(popup_rx.try_recv().is_err());
+        assert!(tiled_rx.try_recv().is_err());
+        assert_eq!(app.state.mode, Mode::Terminal);
+    }
+
+    #[tokio::test]
     async fn route_client_events_discards_paste_when_popup_runtime_is_missing() {
         let mut app = test_app();
         let mut workspace = Workspace::test_new("tiled");
@@ -5738,6 +5815,7 @@ last_pane = "prefix+tab"
                 terminal_id: popup_terminal_id,
                 width: None,
                 height: None,
+                input_passthrough: false,
             });
         };
         install_missing_popup(&mut app);

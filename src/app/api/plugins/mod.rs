@@ -400,6 +400,13 @@ impl App {
                 "popup panes can only open from the normal workspace view",
             );
         }
+        if pane.input_passthrough && placement != PluginPanePlacement::Popup {
+            return encode_error(
+                id,
+                "invalid_params",
+                "input_passthrough is only supported when the effective placement is popup",
+            );
+        }
         match placement {
             PluginPanePlacement::Overlay | PluginPanePlacement::Popup => {
                 if params.workspace_id.is_some()
@@ -1142,6 +1149,24 @@ width = "80%"
 command = ["echo", "board"]
 "#,
                 "invalid_plugin_pane_size",
+            ),
+            (
+                "plugin-non-popup-input-passthrough",
+                r#"
+id = "example.non-popup-input-passthrough"
+name = "Non Popup Input Passthrough"
+version = "0.1.0"
+min_herdr_version = "0.6.10"
+platforms = ["linux", "macos", "windows"]
+
+[[panes]]
+id = "board"
+title = "Board"
+placement = "split"
+input_passthrough = true
+command = ["echo", "board"]
+"#,
+                "invalid_plugin_pane_input_passthrough",
             ),
         ];
 
