@@ -53,7 +53,10 @@ def main():
     seq = None
     dictation_visible = False
     while True:
-        args = ["dontspeak", "status", "--json"]
+        # Keep the external-UI lease in the long-lived bridge, not in the
+        # short-lived popup. That lets DontSpeak choose Herdr before Caps Lock
+        # starts a dictation turn, while the popup itself remains display-only.
+        args = ["dontspeak", "status", "--json", "--ui-receiver", "herdr.voice"]
         if seq is not None:
             args += ["--since", str(seq), "--timeout-ms", "2000"]
         result = command(*args)

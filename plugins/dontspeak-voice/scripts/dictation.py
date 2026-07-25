@@ -8,7 +8,9 @@ import time
 
 
 def status(since=None):
-    args = ["dontspeak", "status", "--json", "--ui-receiver", "herdr.voice"]
+    # The startup bridge owns the external-UI lease. This popup only mirrors
+    # the current text and must never keep the native fallback hidden itself.
+    args = ["dontspeak", "status", "--json"]
     if since is not None:
         args += ["--since", str(since), "--timeout-ms", "2000"]
     result = subprocess.run(args, capture_output=True, text=True, check=False)
@@ -29,7 +31,6 @@ def draw(text):
 
 def main():
     seq = None
-    was_visible = False
     while True:
         snapshot = status(seq)
         if not snapshot:
@@ -43,7 +44,6 @@ def main():
             # the turn ended before launch, exit instead of indefinitely
             # renewing the external-UI lease and hiding the native fallback.
             return
-        was_visible = True
         draw(dictation.get("text", ""))
 
 

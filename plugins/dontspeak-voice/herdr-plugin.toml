@@ -13,7 +13,7 @@ id = "dictate"
 title = "Dictate to this pane"
 description = "Open the live Don't Speak transcription panel for the selected agent."
 contexts = ["pane"]
-command = ["herdr", "plugin", "pane", "open", "--plugin", "dontspeak.voice", "--entrypoint", "dictation", "--placement", "popup", "--focus"]
+command = ["herdr", "plugin", "pane", "open", "--plugin", "dontspeak.voice", "--entrypoint", "dictation", "--placement", "popup", "--no-focus"]
 
 [[panes]]
 id = "dictation"
