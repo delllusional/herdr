@@ -77,7 +77,7 @@ impl App {
         &mut self,
         key: TerminalKey,
     ) -> Option<super::TerminalInputTarget> {
-        if self.state.popup_pane.is_some() {
+        if self.popup_captures_input() {
             return self.handle_terminal_key(key).await;
         }
         let key_event = key.as_key_event();
@@ -122,7 +122,7 @@ impl App {
     }
 
     pub(super) async fn handle_paste(&mut self, text: String) {
-        if self.state.popup_pane.is_some() {
+        if self.popup_captures_input() {
             if let Some(runtime) = self.popup_runtime() {
                 let _ = runtime.send_paste(text).await;
             } else {
@@ -290,7 +290,7 @@ impl App {
             _ => {}
         }
 
-        if self.state.popup_pane.is_some() {
+        if self.popup_captures_input() {
             self.handle_popup_mouse(mouse);
             return;
         }

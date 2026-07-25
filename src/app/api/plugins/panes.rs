@@ -28,7 +28,11 @@ impl App {
             &pane.command,
             cwd,
             extra_env,
-            crate::app::popup::PopupGeometry { width, height },
+            crate::app::popup::PopupGeometry {
+                width,
+                height,
+                input_passthrough: pane.input_passthrough,
+            },
         ) {
             return encode_error(id, "plugin_pane_open_failed", err.to_string());
         }

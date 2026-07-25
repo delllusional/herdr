@@ -10,9 +10,21 @@ use crate::terminal::{TerminalId, TerminalRuntime, TerminalState};
 pub(crate) struct PopupGeometry {
     pub width: Option<PopupSize>,
     pub height: Option<PopupSize>,
+    pub input_passthrough: bool,
 }
 
 impl App {
+    /// An input-transparent popup remains visible while keyboard and paste
+    /// input, including negotiated keyboard protocol input, continue to target
+    /// the focused workspace pane. Pointer input is consumed so a click cannot
+    /// mutate the workspace beneath a transient popup.
+    pub(crate) fn popup_captures_input(&self) -> bool {
+        self.state
+            .popup_pane
+            .as_ref()
+            .is_some_and(|popup| !popup.input_passthrough)
+    }
+
     pub(crate) fn popup_runtime(&self) -> Option<&TerminalRuntime> {
         let terminal_id = &self.state.popup_pane.as_ref()?.terminal_id;
         self.terminal_runtimes.get(terminal_id)
@@ -41,7 +53,7 @@ impl App {
     }
 
     pub(crate) fn try_route_paste_to_popup(&mut self, text: &str) -> bool {
-        if self.state.popup_pane.is_none() {
+        if !self.popup_captures_input() {
             return false;
         }
         let Some(runtime) = self.popup_runtime() else {
@@ -182,6 +194,7 @@ impl App {
             terminal_id,
             width: geometry.width,
             height: geometry.height,
+            input_passthrough: geometry.input_passthrough,
         });
         self.state.mode = Mode::Terminal;
         Ok(())
@@ -206,6 +219,7 @@ impl App {
             terminal_id: terminal_id.clone(),
             width: None,
             height: None,
+            input_passthrough: false,
         });
         (pane_id, terminal_id)
     }
@@ -237,6 +251,7 @@ mod tests {
             terminal_id,
             width: None,
             height: None,
+            input_passthrough: false,
         });
         app
     }

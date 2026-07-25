@@ -294,9 +294,16 @@ closes. A `plugin.pane.open` request can override the manifest placement with
 tiled layout. It accepts optional `width` and `height` fields in the manifest or
 open request; omit them for the default half-size popup, use numbers for outer
 terminal-cell dimensions, or use strings like `"80%"` for a percentage of the
-terminal area. It receives all terminal input, including Escape, and closes
-when the command exits or a `popup.close` request is sent. Dimensions smaller
-than the popup minimum are clamped.
+terminal area. By default, it receives all terminal input, including Escape,
+and closes when the command exits or a `popup.close` request is sent. Dimensions
+smaller than the popup minimum are clamped.
+
+Set `input_passthrough = true` only on a popup entrypoint when the popup is
+visual-only. Keyboard and paste input, including negotiated keyboard-protocol
+events, continue to the focused workspace pane. Pointer input is consumed while
+the popup is visible, so it cannot change the underlying workspace or open a
+second modal. The popup remains session-modal and still closes when its command
+exits or receives `popup.close`.
 
 Declare the placement directly on a plugin pane entrypoint when the pane should
 always be transient:

@@ -921,6 +921,7 @@ fn plugin_link_list_unlink_round_trip() {
             placement: PluginPanePlacement::Overlay,
             width: None,
             height: None,
+            input_passthrough: false,
             command: vec!["bun".into(), "run".into(), "board.ts".into()],
         }],
         link_handlers: vec![PluginManifestLinkHandler {

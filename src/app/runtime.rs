@@ -111,7 +111,7 @@ impl App {
                 let pressed_key_id = pressed_key_identity(super::LOCAL_INPUT_SOURCE, &key);
                 match key.kind {
                     crossterm::event::KeyEventKind::Press => {
-                        if self.state.popup_pane.is_some()
+                        if self.popup_captures_input()
                             || self.state.mode == crate::app::Mode::Terminal
                         {
                             self.suppressed_repeat_keys.remove(&pressed_key_id);
@@ -141,7 +141,7 @@ impl App {
                                 self.pressed_terminal_keys.remove(&pressed_key_id);
                             }
                             true
-                        } else if (self.state.popup_pane.is_some()
+                        } else if (self.popup_captures_input()
                             || self.state.mode == crate::app::Mode::Terminal)
                             && !self.suppressed_repeat_keys.contains(&pressed_key_id)
                         {
@@ -169,13 +169,16 @@ impl App {
             crate::raw_input::RawInputEvent::Mouse(mouse) => {
                 let changes_view = !matches!(mouse.kind, crossterm::event::MouseEventKind::Moved)
                     || self.state.mode.mouse_motion_changes_view();
-                if self.state.popup_pane.is_some() || self.state.mouse_capture {
+                if self.state.popup_pane.is_some() && !self.popup_captures_input() {
+                    false
+                } else if self.popup_captures_input() || self.state.mouse_capture {
                     self.handle_mouse(mouse);
+                    changes_view
                 } else {
                     self.state
                         .handle_pane_mouse_only(&self.terminal_runtimes, mouse);
+                    changes_view
                 }
-                changes_view
             }
             crate::raw_input::RawInputEvent::OuterFocusGained => {
                 self.send_outer_focus_event(crate::ghostty::FocusEvent::Gained);

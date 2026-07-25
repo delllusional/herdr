@@ -800,6 +800,7 @@ impl App {
             crate::app::popup::PopupGeometry {
                 width: binding.width,
                 height: binding.height,
+                input_passthrough: false,
             },
         )
     }

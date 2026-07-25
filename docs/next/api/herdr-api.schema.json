@@ -8258,6 +8258,11 @@
             "id": {
               "type": "string"
             },
+            "input_passthrough": {
+              "default": false,
+              "description": "For an input-transparent popup, route keyboard and paste input to the\nfocused workspace pane while consuming pointer input.",
+              "type": "boolean"
+            },
             "placement": {
               "$ref": "#/schemas/success_response/$defs/PluginPanePlacement",
               "default": "overlay"

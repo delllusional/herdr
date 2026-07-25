@@ -235,7 +235,7 @@ impl App {
     }
 
     fn prepare_popup_key_forward(&mut self, key: TerminalKey) -> PreparedPopupInput {
-        if self.state.popup_pane.is_none() {
+        if !self.popup_captures_input() {
             return PreparedPopupInput::NotOpen;
         }
         let Some(terminal_id) = self
@@ -264,7 +264,7 @@ impl App {
     }
 
     pub(crate) fn host_keyboard_report_all_requested(&self) -> bool {
-        let runtime = if self.state.popup_pane.is_some() {
+        let runtime = if self.popup_captures_input() {
             self.popup_runtime()
         } else if self.state.mode == Mode::Terminal {
             self.state.active.and_then(|ws_idx| {

@@ -82,6 +82,8 @@ struct RawPluginManifestPane {
     width: Option<PopupSize>,
     #[serde(default)]
     height: Option<PopupSize>,
+    #[serde(default)]
+    input_passthrough: bool,
     command: Vec<String>,
 }
 
@@ -430,6 +432,12 @@ fn normalize_manifest_pane(
             "pane width and height are only supported when placement is popup".to_string(),
         ));
     }
+    if pane.input_passthrough && pane.placement != PluginPanePlacement::Popup {
+        return Err((
+            "invalid_plugin_pane_input_passthrough",
+            "input_passthrough is only supported when placement is popup".to_string(),
+        ));
+    }
     Ok(PluginManifestPane {
         id,
         title,
@@ -438,6 +446,7 @@ fn normalize_manifest_pane(
         placement: pane.placement,
         width: pane.width,
         height: pane.height,
+        input_passthrough: pane.input_passthrough,
         command,
     })
 }

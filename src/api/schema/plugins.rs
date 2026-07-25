@@ -275,6 +275,10 @@ pub struct PluginManifestPane {
     pub width: Option<PopupSize>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub height: Option<PopupSize>,
+    /// For an input-transparent popup, route keyboard and paste input to the
+    /// focused workspace pane while consuming pointer input.
+    #[serde(default)]
+    pub input_passthrough: bool,
     pub command: Vec<String>,
 }
 
