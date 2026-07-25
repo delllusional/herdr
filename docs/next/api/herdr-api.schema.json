@@ -9592,6 +9592,13 @@
               },
               "type": "array"
             },
+            "outer_terminal_focus": {
+              "description": "Focus state reported by the foreground full-app client.\n\n`None` means no foreground client or a client that does not report host focus.",
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
             "panes": {
               "items": {
                 "$ref": "#/schemas/success_response/$defs/PaneInfo"
