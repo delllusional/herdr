@@ -3,8 +3,8 @@
 # Run tests
 test:
     cargo nextest run --locked --status-level fail --final-status-level fail --failure-output final --success-output never
-    python3 -m unittest scripts.test_agent_detection_manifest_check scripts.test_changelog scripts.test_config_reference_check scripts.test_docs_translation_parity scripts.test_hermes_integration_asset scripts.test_package_windows_conpty scripts.test_preview scripts.test_vendor_libghostty_vt scripts.test_vendor_portable_pty
     just dontspeak-voice-plugin-test
+    python3 -m unittest scripts.test_agent_detection_manifest_check scripts.test_changelog scripts.test_config_reference_check scripts.test_docs_translation_parity scripts.test_hermes_integration_asset scripts.test_package_windows_conpty scripts.test_preview scripts.test_vendor_libghostty_vt scripts.test_vendor_portable_pty
     just integration-assets-test
     just plugin-marketplace-test
 
@@ -16,6 +16,8 @@ test-one filter:
 lint:
     cargo fmt --check
     cargo clippy --all-targets --locked -- -D warnings
+    cargo fmt --manifest-path plugins/dontspeak-voice/runtime/Cargo.toml --check
+    cargo clippy --manifest-path plugins/dontspeak-voice/runtime/Cargo.toml --all-targets --locked -- -D warnings
 
 # Run PR CI checks
 ci filter='all()': lint
@@ -24,14 +26,16 @@ ci filter='all()': lint
     just integration-assets-test
     just plugin-marketplace-test
 
+# Validate the standalone runtime shipped with the bundled Don't Speak plugin.
+dontspeak-voice-plugin-test:
+    cargo test --manifest-path plugins/dontspeak-voice/runtime/Cargo.toml --locked
+    cargo build --manifest-path plugins/dontspeak-voice/runtime/Cargo.toml --locked --release
+
 # Run Windows target lint from Unix/macOS to catch cfg(windows) compile and clippy failures before CI
 windows-lint:
     rustup target add x86_64-pc-windows-msvc
     LIBGHOSTTY_VT_SIMD=false cargo clippy --bin herdr --locked --target x86_64-pc-windows-msvc -- -D warnings
-
-# Exercise the bundled Don't Speak integration, including presenter focus safety.
-dontspeak-voice-plugin-test:
-    python3 -m unittest discover -s plugins/dontspeak-voice/tests -p 'test_*.py'
+    cargo clippy --manifest-path plugins/dontspeak-voice/runtime/Cargo.toml --all-targets --locked --target x86_64-pc-windows-msvc -- -D warnings
 
 # Check formatting + run unit tests + Windows target lint + maintenance script tests
 check: ci windows-lint

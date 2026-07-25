@@ -1,19 +1,22 @@
 id = "dontspeak.voice"
 name = "Don't Speak Voice"
-version = "0.1.0"
+version = "0.2.0"
 min_herdr_version = "0.7.5"
 description = "Voice queue badges and a terminal-native dictation preview for Herdr panes."
 platforms = ["linux", "macos"]
 
+[[build]]
+command = ["cargo", "build", "--locked", "--release", "--manifest-path", "runtime/Cargo.toml"]
+
 [[startup]]
-command = ["python3", "scripts/status_bridge.py"]
+command = ["runtime/target/release/dontspeak-voice", "startup"]
 
 [[actions]]
 id = "dictate"
 title = "Dictate to this pane"
 description = "Open the live Don't Speak transcription panel for the selected agent."
 contexts = ["pane"]
-command = ["python3", "scripts/status_bridge.py", "--open-current"]
+command = ["runtime/target/release/dontspeak-voice", "open"]
 
 [[panes]]
 id = "dictation"
@@ -22,4 +25,4 @@ placement = "popup"
 width = "55%"
 height = "16%"
 input_passthrough = true
-command = ["python3", "scripts/dictation.py"]
+command = ["runtime/target/release/dontspeak-voice", "dictation"]
