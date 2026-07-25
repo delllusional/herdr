@@ -9,6 +9,11 @@ use super::workspaces::WorkspaceInfo;
 pub struct SessionSnapshot {
     pub version: String,
     pub protocol: u32,
+    /// Focus state reported by the foreground full-app client.
+    ///
+    /// `None` means no foreground client or a client that does not report host focus.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub outer_terminal_focus: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub focused_workspace_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

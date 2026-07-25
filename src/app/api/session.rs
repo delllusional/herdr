@@ -45,6 +45,7 @@ impl App {
         SessionSnapshot {
             version: crate::build_info::version(),
             protocol: crate::protocol::PROTOCOL_VERSION,
+            outer_terminal_focus: self.state.outer_terminal_focus,
             focused_workspace_id,
             focused_tab_id,
             focused_pane_id,
@@ -96,6 +97,7 @@ mod tests {
         assert_eq!(snapshot.tabs.len(), 2);
         assert_eq!(snapshot.panes.len(), 2);
         assert_eq!(snapshot.layouts.len(), 2);
+        assert_eq!(snapshot.outer_terminal_focus, None);
         assert_eq!(
             snapshot.focused_workspace_id.as_deref(),
             Some(snapshot.workspaces[0].workspace_id.as_str())
@@ -108,5 +110,16 @@ mod tests {
             snapshot.focused_pane_id.as_deref(),
             Some(snapshot.panes[0].pane_id.as_str())
         );
+
+        app.state.outer_terminal_focus = Some(true);
+        let response = app.handle_api_request(crate::api::schema::Request {
+            id: "req_focused_snapshot".into(),
+            method: Method::SessionSnapshot(EmptyParams::default()),
+        });
+        let success: SuccessResponse = serde_json::from_str(&response).unwrap();
+        let ResponseResult::SessionSnapshot { snapshot } = success.result else {
+            panic!("expected session snapshot response");
+        };
+        assert_eq!(snapshot.outer_terminal_focus, Some(true));
     }
 }
