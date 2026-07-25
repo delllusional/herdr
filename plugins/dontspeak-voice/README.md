@@ -15,8 +15,10 @@ show the per-pane voice status, for example:
 rows = [["state_icon", "workspace"], ["agent", "$dontspeak_voice"]]
 ```
 
-The `Dictate to this pane` action opens a popup
-for the pane from which the action was invoked. While that popup stays alive it
-leases the dictation presentation from Don't Speak, so native Don't Speak
-overlays stay hidden; if the popup or plugin disappears, the short lease expires
-and native overlays resume automatically.
+When Caps Lock starts local dictation, the startup bridge opens a small, read-only
+popup over the active Herdr pane. It mirrors only the native Don't Speak
+transcript and closes when dictation ends. Keyboard and paste events continue to
+the underlying agent pane, so Don't Speak keeps its normal gesture semantics:
+single tap inserts and submits; double tap inserts without Enter; long press
+cancels. If the popup or plugin disappears, the short UI lease expires and the
+native Don't Speak overlay resumes automatically.

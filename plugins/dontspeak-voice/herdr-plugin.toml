@@ -20,5 +20,6 @@ id = "dictation"
 title = "Don't Speak Dictation"
 placement = "popup"
 width = "55%"
-height = "32%"
+height = "16%"
+input_passthrough = true
 command = ["python3", "scripts/dictation.py"]

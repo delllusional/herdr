@@ -8,6 +8,8 @@ import time
 
 SOURCE = "plugin:dontspeak-voice"
 TOKEN = "dontspeak_voice"
+POPUP_PLUGIN = "dontspeak.voice"
+POPUP_ENTRYPOINT = "dictation"
 
 
 def command(*args):
@@ -34,9 +36,22 @@ def report(pane_id, value=None):
     command(*args)
 
 
+def open_dictation_popup():
+    # A popup uses the currently focused Herdr pane as its target. --no-focus
+    # preserves that target so DontSpeak's native paste/Enter route is unchanged.
+    command(
+        "herdr", "plugin", "pane", "open",
+        "--plugin", POPUP_PLUGIN,
+        "--entrypoint", POPUP_ENTRYPOINT,
+        "--placement", "popup",
+        "--no-focus",
+    )
+
+
 def main():
     seen = set()
     seq = None
+    dictation_visible = False
     while True:
         args = ["dontspeak", "status", "--json"]
         if seq is not None:
@@ -55,6 +70,11 @@ def main():
             continue
         seq = status.get("seq", seq)
         muted = bool(status.get("activity", {}).get("muted"))
+        dictation = status.get("dictation", {})
+        now_visible = dictation.get("state") != "hidden"
+        if now_visible and not dictation_visible:
+            open_dictation_popup()
+        dictation_visible = now_visible
         current = set()
         for row in status.get("voice_sessions", []):
             pane_id = row.get("pane_id")
